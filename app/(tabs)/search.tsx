@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Django API endpoint for GraphHopper routing
-const API_URL = 'http://your-django-api.com/route';
+const API_URL = 'http://192.168.117.20:8000/api';
 
 type Coordinate = {
   latitude: number;

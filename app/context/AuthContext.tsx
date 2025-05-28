@@ -1,20 +1,26 @@
-import React, { createContext, useContext, useState } from "react";
+// context/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { checkIfLoggedIn } from "../util/auth";
 
-// Define the shape of the AuthContext
 type AuthContextType = {
   isSignedIn: boolean;
   setIsSignedIn: (value: boolean) => void;
 };
 
-// Create the context with default values
 const AuthContext = createContext<AuthContextType>({
   isSignedIn: false,
   setIsSignedIn: () => {},
 });
 
-// The provider component that wraps your app
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const loggedIn = await checkIfLoggedIn();
+      setIsSignedIn(loggedIn);
+    })();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ isSignedIn, setIsSignedIn }}>
@@ -23,5 +29,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Hook to use the context in components
 export const useAuth = () => useContext(AuthContext);

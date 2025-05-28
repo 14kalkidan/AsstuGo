@@ -1,20 +1,16 @@
+// screens/AuthScreen.tsx
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Alert,
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Image, KeyboardAvoidingView,
+  Platform, ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors, GlobalStyles } from "../styles/global";
 import { Ionicons } from "@expo/vector-icons";
+import api from "../util/api";
 import { useAuth } from "../context/AuthContext";
+import { setAuthToken } from "../util/auth";
 
 const AuthScreen = () => {
   const router = useRouter();
@@ -25,20 +21,52 @@ const AuthScreen = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const validateForm = () => {
+    if (!email || !password) {
+      setError("Email and password are required.");
+      return false;
+    }
+    if (!isLogin && !name) {
+      setError("Name is required for signup.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    return true;
+  };
+
   const handleAuth = async () => {
+    if (!validateForm()) return;
+
     setLoading(true);
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Auto-login regardless of input
-    setIsSignedIn(true);
-    router.replace("/(tabs)");
-    Alert.alert("Success", "Logged in successfully!");
-    
-    setLoading(false);
+    setError("");
+
+    try {
+      const endpoint = isLogin ? "/api/login/" : "/api/signup/";
+      const response = await api.post(endpoint, {
+        email,
+        password,
+        ...(isLogin ? {} : { name }),
+      });
+
+      if (response.data.success && response.data.token) {
+        await setAuthToken(response.data.token); // ✅ Save token
+        setIsSignedIn(true);                      // ✅ Update context
+        router.replace("/(tabs)");                // ✅ Go to home
+      } else {
+        setError(response.data.message || "Authentication failed.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,10 +75,7 @@ const AuthScreen = () => {
       style={[GlobalStyles.container, { backgroundColor: Colors.white }]}
     >
       <View style={styles.header}>
-        <Image
-          source={require("../../assets/images/logo.png")}
-          style={styles.logo}
-        />
+        <Image source={require("../../assets/images/logo.png")} style={styles.logo} />
         <Text style={styles.title}>AASTU GO</Text>
       </View>
 
@@ -71,7 +96,7 @@ const AuthScreen = () => {
         )}
 
         <TextInput
-          placeholder="Email (Optional)"
+          placeholder="Email"
           placeholderTextColor={Colors.secondary}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -82,7 +107,7 @@ const AuthScreen = () => {
 
         <View style={styles.passwordContainer}>
           <TextInput
-            placeholder="Password (Optional)"
+            placeholder="Password"
             placeholderTextColor={Colors.secondary}
             secureTextEntry={!showPassword}
             style={GlobalStyles.input}
@@ -101,6 +126,8 @@ const AuthScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {error && <Text style={styles.error}>{error}</Text>}
+
         <TouchableOpacity
           style={[GlobalStyles.button, styles.authButton]}
           onPress={handleAuth}
@@ -116,8 +143,10 @@ const AuthScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setIsLogin(!isLogin)}
-          style={styles.toggleButton}
+          onPress={() => {
+            setError("");
+            setIsLogin(!isLogin);
+          }}
         >
           <Text style={styles.toggleText}>
             {isLogin
@@ -165,18 +194,19 @@ const styles = StyleSheet.create({
     right: 15,
     top: 15,
   },
+  error: {
+    color: Colors.error,
+    marginBottom: 15,
+    textAlign: "center",
+  },
   authButton: {
     backgroundColor: Colors.primary,
     marginTop: 10,
     marginBottom: 20,
   },
-  toggleButton: {
-    marginTop: 10,
-  },
   toggleText: {
-    color: Colors.primary,
+    color: Colors.secondary,
     textAlign: "center",
-    fontWeight: "500",
   },
 });
 

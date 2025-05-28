@@ -21,9 +21,9 @@ export default function _layout() {
         }}
       />
       <Tabs.Screen
-  name="search"  // ✅ Matches search.tsx
+  name="search"  
   options={{ 
-    title: 'Search',  // Add a title or keep empty
+    title: 'Search',  
     tabBarIcon: ({ color, size }) => (
       <Ionicons name="search-outline" size={size} color={color} />
     ),
